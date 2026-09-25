@@ -33,17 +33,20 @@ export function CanvasArena({
 
       {/* Dual Layer Canvas Container */}
       <div className="flex-1 relative flex items-center justify-center p-2 bg-slate-950 overflow-hidden">
-        <div className="relative rounded-xl overflow-hidden shadow-2xl border border-slate-800 bg-white">
+        <div className="relative rounded-xl overflow-hidden shadow-2xl border border-slate-800 bg-white max-w-full w-full max-h-full aspect-[7/5]">
           {/* Layer 1: Persistent Track Canvas */}
           <canvas
             ref={trackCanvasRef}
             width={700}
             height={500}
-            className="block cursor-crosshair touch-none"
+            className="w-full h-full block cursor-crosshair touch-none select-none"
             onMouseDown={handleCanvasMouseDown}
             onMouseMove={handleCanvasMouseMove}
             onMouseUp={handleCanvasMouseUp}
             onMouseLeave={handleCanvasMouseUp}
+            onTouchStart={handleCanvasMouseDown}
+            onTouchMove={handleCanvasMouseMove}
+            onTouchEnd={handleCanvasMouseUp}
           />
 
           {/* Layer 2: Animated Robot & Sensor Overlay Canvas */}
@@ -51,7 +54,7 @@ export function CanvasArena({
             ref={robotCanvasRef}
             width={700}
             height={500}
-            className="absolute top-0 left-0 pointer-events-none"
+            className="absolute top-0 left-0 w-full h-full pointer-events-none"
           />
 
           {/* Helper Tooltip Overlay when Reposition tool is selected */}

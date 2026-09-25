@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import * as Blockly from 'blockly';
 import { javascriptGenerator } from 'blockly/javascript';
+import { Play, Square, Code2, Bot, Gamepad2 } from 'lucide-react';
 import { Header } from './components/Header';
 import { CanvasArena } from './components/Arena/CanvasArena';
 import { TopControlBar } from './components/BlocklyEditor/TopControlBar';
@@ -15,6 +16,7 @@ export default function App() {
   const [generatedCode, setGeneratedCode] = useState('');
   const [isCodeModalOpen, setIsCodeModalOpen] = useState(false);
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
+  const [mobileTab, setMobileTab] = useState('arena'); // 'arena' | 'code'
 
   const workspaceRef = useRef(null);
 
@@ -111,10 +113,14 @@ export default function App() {
         onToggleSensors={sim.toggleSensors}
       />
 
-      {/* Main 50/50 Rigid Split Pane Viewport */}
-      <main className="flex-1 grid grid-cols-1 lg:grid-cols-2 h-[calc(100vh-56px)] overflow-hidden">
+      {/* Main Viewport Container */}
+      <main className="flex-1 flex flex-col lg:grid lg:grid-cols-2 h-[calc(100vh-56px)] overflow-hidden relative">
         {/* LEFT PANEL: HTML5 Canvas Robot Arena */}
-        <section className="h-full relative overflow-hidden border-r border-slate-800">
+        <section
+          className={`h-full relative overflow-hidden border-r border-slate-800 ${
+            mobileTab === 'arena' ? 'flex flex-col flex-1' : 'hidden lg:flex lg:flex-col'
+          }`}
+        >
           <CanvasArena
             trackCanvasRef={sim.trackCanvasRef}
             robotCanvasRef={sim.robotCanvasRef}
@@ -135,7 +141,11 @@ export default function App() {
         </section>
 
         {/* RIGHT PANEL: Blockly Workspace & Simulation Controls */}
-        <section className="h-full flex flex-col relative overflow-hidden bg-slate-900">
+        <section
+          className={`h-full flex flex-col relative overflow-hidden bg-slate-900 ${
+            mobileTab === 'code' ? 'flex flex-col flex-1' : 'hidden lg:flex lg:flex-col'
+          }`}
+        >
           <TopControlBar
             onRunSimulation={handleRunSimulation}
             onStopSimulation={sim.stopSimulation}
@@ -156,6 +166,56 @@ export default function App() {
           </div>
         </section>
       </main>
+
+      {/* Mobile Floating Bottom Dock View Switcher (< lg screens) */}
+      <div className="lg:hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 bg-slate-900/90 backdrop-blur-md p-1.5 rounded-2xl border border-slate-700/80 shadow-2xl">
+        <button
+          onClick={() => setMobileTab('arena')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition ${
+            mobileTab === 'arena'
+              ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-600/30'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+          }`}
+        >
+          <Gamepad2 className="w-4 h-4" />
+          <span>Arena</span>
+        </button>
+
+        <button
+          onClick={() => setMobileTab('code')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition ${
+            mobileTab === 'code'
+              ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-600/30'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+          }`}
+        >
+          <Code2 className="w-4 h-4" />
+          <span>Blockly Code</span>
+        </button>
+
+        {/* Floating Quick Run/Stop on Mobile Arena View */}
+        {mobileTab === 'arena' && (
+          <div className="pl-1 border-l border-slate-700/60 flex items-center">
+            {!sim.isRunning ? (
+              <button
+                onClick={handleRunSimulation}
+                className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 active:scale-95 text-white text-xs font-bold rounded-xl shadow-lg shadow-emerald-500/20 transition"
+              >
+                <Play className="w-3.5 h-3.5 fill-current" />
+                <span>Run</span>
+              </button>
+            ) : (
+              <button
+                onClick={sim.stopSimulation}
+                className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-rose-600 to-red-700 active:scale-95 text-white text-xs font-bold rounded-xl shadow-lg shadow-rose-600/30 transition"
+              >
+                <Square className="w-3.5 h-3.5 fill-current" />
+                <span>Stop</span>
+              </button>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Code View Modal */}
       <CodeModal

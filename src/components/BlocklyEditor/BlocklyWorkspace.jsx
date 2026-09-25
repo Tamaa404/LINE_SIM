@@ -67,14 +67,25 @@ export function BlocklyWorkspace({ onCodeChange, setWorkspaceRef }) {
     workspace.addChangeListener(handleWorkspaceChange);
     handleWorkspaceChange(); // Initial code trigger
 
-    // Handle Window Resize
+    // Handle Window & Container Resize
     const handleResize = () => {
-      Blockly.svgResize(workspace);
+      if (workspaceRef.current) {
+        Blockly.svgResize(workspaceRef.current);
+      }
     };
     window.addEventListener('resize', handleResize);
 
+    // Observer for div size changes (e.g. when mobile tabs toggle)
+    const resizeObserver = new ResizeObserver(() => {
+      handleResize();
+    });
+    if (blocklyDivRef.current) {
+      resizeObserver.observe(blocklyDivRef.current);
+    }
+
     return () => {
       window.removeEventListener('resize', handleResize);
+      resizeObserver.disconnect();
       workspace.dispose();
     };
   }, []);

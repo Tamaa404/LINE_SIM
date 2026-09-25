@@ -301,18 +301,43 @@ export function useRobotSim() {
     }
   }, [loadPresetTrack]);
 
-  // Drawing Handlers
-  const handleCanvasMouseDown = (e) => {
+  // Helper to get scaled canvas coordinates from Mouse or Touch event
+  const getCanvasCoords = useCallback((e) => {
     const canvas = trackCanvasRef.current;
-    if (!canvas) return;
+    if (!canvas) return null;
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
-    const x = (e.clientX - rect.left) * scaleX;
-    const y = (e.clientY - rect.top) * scaleY;
+
+    let clientX = e.clientX;
+    let clientY = e.clientY;
+
+    if (e.touches && e.touches.length > 0) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else if (e.changedTouches && e.changedTouches.length > 0) {
+      clientX = e.changedTouches[0].clientX;
+      clientY = e.changedTouches[0].clientY;
+    }
+
+    if (clientX === undefined || clientY === undefined) return null;
+
+    return {
+      x: (clientX - rect.left) * scaleX,
+      y: (clientY - rect.top) * scaleY
+    };
+  }, []);
+
+  // Drawing Handlers for Mouse & Touch
+  const handleCanvasMouseDown = (e) => {
+    if (e.cancelable && e.type.startsWith('touch')) {
+      e.preventDefault();
+    }
+    const coords = getCanvasCoords(e);
+    if (!coords) return;
+    const { x, y } = coords;
 
     if (activeTool === 'reposition') {
-      // Reposition bot
       setRobot(prev => {
         startPosRef.current = { x, y, heading: prev.heading };
         updateSensors(x, y, prev.heading);
@@ -334,15 +359,16 @@ export function useRobotSim() {
   };
 
   const handleCanvasMouseMove = (e) => {
-    const canvas = trackCanvasRef.current;
-    if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    const x = (e.clientX - rect.left) * scaleX;
-    const y = (e.clientY - rect.top) * scaleY;
+    if (e.cancelable && e.type.startsWith('touch')) {
+      e.preventDefault();
+    }
+    const coords = getCanvasCoords(e);
+    if (!coords) return;
+    const { x, y } = coords;
 
-    if (activeTool === 'reposition' && e.buttons === 1) {
+    const isPressed = e.buttons === 1 || (e.touches && e.touches.length > 0);
+
+    if (activeTool === 'reposition' && isPressed) {
       setRobot(prev => {
         updateSensors(x, y, prev.heading);
         return { ...prev, x, y };
@@ -350,7 +376,7 @@ export function useRobotSim() {
       return;
     }
 
-    if (activeTool === 'set_destination' && e.buttons === 1) {
+    if (activeTool === 'set_destination' && isPressed) {
       targetPosRef.current = { x, y, radius: 26, active: true };
       setDestinationReached(false);
       setRobot(prev => ({ ...prev }));
