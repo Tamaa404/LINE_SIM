@@ -13,25 +13,25 @@ export function CodeModal({ isOpen, onClose, code }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
-      <div className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#6C1A1A]/40 dark:bg-black/60 backdrop-blur-sm animate-fade-in">
+      <div className="w-full max-w-2xl bg-palette-cream-light dark:bg-slate-900 border-2 border-palette-maroon dark:border-slate-700 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] transition-colors duration-300">
         {/* Modal Header */}
-        <div className="h-12 border-b border-slate-800 px-4 flex items-center justify-between bg-slate-900/90">
+        <div className="h-12 border-b-2 border-palette-cream-border dark:border-slate-800 px-4 flex items-center justify-between bg-palette-cream dark:bg-slate-800">
           <div className="flex items-center gap-2">
-            <Code2 className="w-5 h-5 text-cyan-400" />
-            <h2 className="text-sm font-bold text-slate-100">Generated Async JavaScript</h2>
+            <Code2 className="w-5 h-5 text-palette-teal dark:text-sky-400" />
+            <h2 className="text-sm font-black text-palette-maroon dark:text-slate-100">Generated Async JavaScript</h2>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={handleCopy}
-              className="flex items-center gap-1.5 px-3 py-1 bg-slate-800 hover:bg-slate-700 text-xs font-medium text-cyan-300 rounded-lg border border-slate-700 transition"
+              className="flex items-center gap-1.5 px-3 py-1 bg-palette-teal hover:bg-palette-teal-dark dark:bg-sky-500 dark:hover:bg-sky-600 text-xs font-bold text-white rounded-lg transition shadow-sm"
             >
-              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-cyan-400" />}
+              {copied ? <Check className="w-3.5 h-3.5 text-white" /> : <Copy className="w-3.5 h-3.5 text-white" />}
               <span>{copied ? 'Copied!' : 'Copy'}</span>
             </button>
             <button
               onClick={onClose}
-              className="p-1 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition"
+              className="p-1 text-palette-maroon/70 dark:text-slate-400 hover:text-palette-maroon dark:hover:text-slate-100 hover:bg-palette-cream-dark dark:hover:bg-slate-700 rounded-lg transition"
             >
               <X className="w-5 h-5" />
             </button>
@@ -39,18 +39,18 @@ export function CodeModal({ isOpen, onClose, code }) {
         </div>
 
         {/* Code Content Viewport */}
-        <div className="p-4 overflow-y-auto bg-slate-950 font-mono text-xs text-cyan-300 leading-relaxed">
+        <div className="p-4 overflow-y-auto bg-palette-cream-paper dark:bg-slate-950 font-mono text-xs text-palette-maroon dark:text-sky-300 leading-relaxed border-b border-palette-cream-border dark:border-slate-800 font-semibold">
           <pre className="whitespace-pre-wrap select-text">
             {code || '// Add blocks in workspace to generate code...'}
           </pre>
         </div>
 
         {/* Footer */}
-        <div className="h-10 border-t border-slate-800 px-4 flex items-center justify-between text-[11px] text-slate-400 bg-slate-900">
+        <div className="h-10 border-t border-palette-cream-border dark:border-slate-800 px-4 flex items-center justify-between text-[11px] text-palette-maroon/70 dark:text-slate-400 bg-palette-cream dark:bg-slate-800 font-medium">
           <span>Non-blocking async execution engine with auto-yield sleep ticks</span>
           <button
             onClick={onClose}
-            className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded text-xs transition"
+            className="px-3 py-1 bg-palette-cream-light hover:bg-palette-cream-dark dark:bg-slate-700 dark:hover:bg-slate-600 text-palette-maroon dark:text-slate-200 font-bold rounded text-xs transition border border-palette-cream-border dark:border-slate-600 shadow-sm"
           >
             Close
           </button>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Play, Square, FastForward, RotateCcw, Radio, RadioReceiver, Navigation, Compass } from 'lucide-react';
+import { Play, Square, FastForward, RotateCcw, Radio, Navigation } from 'lucide-react';
 
 export function TopControlBar({
   onRunSimulation,
@@ -13,13 +13,13 @@ export function TopControlBar({
   onLoadManualCode
 }) {
   return (
-    <div className="h-12 bg-slate-900 border-b border-slate-800 px-2 sm:px-4 flex items-center justify-between z-10 select-none shrink-0">
+    <div className="h-12 bg-palette-cream dark:bg-slate-900 border-b-2 border-palette-cream-border dark:border-slate-800 px-2 sm:px-4 flex items-center justify-between z-10 select-none shrink-0 shadow-sm transition-colors duration-300">
       {/* Simulation Play / Stop Execution Group */}
       <div className="flex items-center gap-1.5 sm:gap-2">
         {!isRunning ? (
           <button
             onClick={onRunSimulation}
-            className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 active:scale-95 text-white text-xs font-bold rounded-lg shadow-lg shadow-emerald-500/20 transition transform shrink-0"
+            className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 bg-palette-teal hover:bg-palette-teal-dark dark:bg-sky-500 dark:hover:bg-sky-600 active:scale-95 text-white text-xs font-black rounded-lg shadow-md transition transform shrink-0"
           >
             <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current" />
             <span className="text-[11px] sm:text-xs">Run</span>
@@ -28,7 +28,7 @@ export function TopControlBar({
         ) : (
           <button
             onClick={onStopSimulation}
-            className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 bg-gradient-to-r from-rose-600 to-red-700 hover:from-rose-500 hover:to-red-600 active:scale-95 text-white text-xs font-bold rounded-lg shadow-lg shadow-rose-600/30 transition transform shrink-0"
+            className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 bg-palette-crimson hover:bg-palette-crimson-dark dark:bg-rose-600 dark:hover:bg-rose-700 active:scale-95 text-white text-xs font-black rounded-lg shadow-md transition transform shrink-0"
           >
             <Square className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current" />
             <span className="text-[11px] sm:text-xs">Stop</span>
@@ -37,19 +37,19 @@ export function TopControlBar({
 
         <button
           onClick={onResetWorkspace}
-          className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg border border-slate-700 transition"
+          className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 bg-palette-cream-light hover:bg-palette-cream-dark dark:bg-slate-800 dark:hover:bg-slate-700 text-palette-maroon dark:text-slate-200 text-xs font-bold rounded-lg border border-palette-cream-border dark:border-slate-700 transition shadow-sm"
           title="Reset to default Line Follower block program"
         >
-          <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+          <RotateCcw className="w-3.5 h-3.5 text-palette-crimson dark:text-rose-400" />
           <span className="hidden xl:inline">Line Follower Code</span>
         </button>
 
         <button
           onClick={onLoadManualCode}
-          className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs font-medium rounded-lg border border-slate-700 transition"
+          className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 bg-palette-cream-light hover:bg-palette-cream-dark dark:bg-slate-800 dark:hover:bg-slate-700 text-palette-teal dark:text-sky-400 text-xs font-extrabold rounded-lg border border-palette-cream-border dark:border-slate-700 transition shadow-sm"
           title="Load 100px -> Right 90° -> 50px -> Right 90° -> 50px Manual Navigation Code"
         >
-          <Navigation className="w-3.5 h-3.5 text-cyan-400" />
+          <Navigation className="w-3.5 h-3.5 text-palette-teal dark:text-sky-400" />
           <span className="hidden md:inline">Manual Task</span>
         </button>
       </div>
@@ -59,24 +59,24 @@ export function TopControlBar({
         {/* Sensor Toggle Switch */}
         <button
           onClick={onToggleSensors}
-          className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 rounded-lg border text-xs font-semibold transition ${
+          className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 rounded-lg border text-xs font-bold transition shadow-sm ${
             sensorsEnabled
-              ? 'bg-emerald-950/80 text-emerald-300 border-emerald-700/80 shadow-sm shadow-emerald-900/40'
-              : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-750'
+              ? 'bg-palette-teal text-white border-palette-teal-dark dark:bg-emerald-600 dark:border-emerald-500'
+              : 'bg-palette-cream-light text-palette-maroon border-palette-cream-border hover:bg-palette-cream-dark dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 dark:hover:bg-slate-700'
           }`}
           title="Toggle IR Line Sensors ON/OFF for manual navigation"
         >
-          <Radio className={`w-3.5 h-3.5 ${sensorsEnabled ? 'text-emerald-400 animate-pulse' : 'text-slate-500'}`} />
+          <Radio className={`w-3.5 h-3.5 ${sensorsEnabled ? 'text-white animate-pulse' : 'text-palette-crimson dark:text-rose-400'}`} />
           <span className="hidden sm:inline">Sensors:</span>
           <span className="text-[11px] sm:text-xs">{sensorsEnabled ? 'ON' : 'OFF'}</span>
         </button>
 
         {/* Speed Slider */}
-        <div className="flex items-center gap-1.5 sm:gap-2 bg-slate-950/80 px-2 sm:px-3 py-1 rounded-lg border border-slate-800">
-          <div className="flex items-center gap-1 text-xs text-slate-300">
-            <FastForward className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="text-slate-400 font-medium hidden md:inline">Speed:</span>
-            <span className="font-mono font-bold text-cyan-300 text-xs">{simSpeed}x</span>
+        <div className="flex items-center gap-1.5 sm:gap-2 bg-palette-cream-light dark:bg-slate-800 px-2 sm:px-3 py-1 rounded-lg border border-palette-cream-border dark:border-slate-700 shadow-sm">
+          <div className="flex items-center gap-1 text-xs text-palette-maroon dark:text-slate-300">
+            <FastForward className="w-3.5 h-3.5 text-palette-teal dark:text-sky-400" />
+            <span className="text-palette-maroon dark:text-slate-300 font-bold hidden md:inline">Speed:</span>
+            <span className="font-mono font-black text-palette-teal dark:text-sky-400 text-xs">{simSpeed}x</span>
           </div>
           <input
             type="range"
@@ -85,7 +85,7 @@ export function TopControlBar({
             step="0.5"
             value={simSpeed}
             onChange={(e) => setSimSpeed(Number(e.target.value))}
-            className="w-12 sm:w-16 accent-cyan-400 cursor-pointer h-1.5 bg-slate-700 rounded-lg"
+            className="w-12 sm:w-16 accent-[#31AAA9] dark:accent-sky-400 cursor-pointer h-1.5 bg-palette-cream-border dark:bg-slate-700 rounded-lg"
           />
         </div>
       </div>

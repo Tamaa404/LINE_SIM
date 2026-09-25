@@ -156,11 +156,11 @@ export function useRobotSim() {
     const canvas = trackCanvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#FFFFFF';
+    ctx.fillStyle = '#FFF8E7'; // Warm cream paper canvas
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Draw background subtle grid
-    ctx.strokeStyle = '#E2E8F0';
+    // Draw background subtle grid in warm sand tint
+    ctx.strokeStyle = '#E6CA85';
     ctx.lineWidth = 1;
     const gridSize = 40;
     for (let x = 0; x < canvas.width; x += gridSize) {
@@ -190,8 +190,8 @@ export function useRobotSim() {
     const ctx = canvas.getContext('2d');
     clearTrack();
 
-    ctx.strokeStyle = '#000000';
-    ctx.fillStyle = '#000000';
+    ctx.strokeStyle = '#6C1A1A'; // Deep Maroon Track Line
+    ctx.fillStyle = '#6C1A1A';
     ctx.lineWidth = 26;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -206,17 +206,14 @@ export function useRobotSim() {
         ctx.beginPath();
         ctx.ellipse(cx, cy, 260, 160, 0, 0, Math.PI * 2);
         ctx.stroke();
-        // Set start position on the top of the oval heading right
         startPosRef.current = { x: cx, y: cy - 160, heading: 0 };
         break;
 
       case 'figure8':
         ctx.beginPath();
         const r = 120;
-        // Left loop
         ctx.arc(cx - r, cy, r, 0, Math.PI * 2);
         ctx.stroke();
-        // Right loop
         ctx.beginPath();
         ctx.arc(cx + r, cy, r, 0, Math.PI * 2);
         ctx.stroke();
@@ -258,9 +255,8 @@ export function useRobotSim() {
         break;
 
       case 'destination_challenge':
-        // Dotted guideline path: start (150, 150) -> forward 100 -> (250, 150) -> turn right -> down 50 -> (250, 200) -> turn right -> left 50 -> destination (200, 200)
         ctx.save();
-        ctx.strokeStyle = '#38BDF8';
+        ctx.strokeStyle = '#31AAA9'; // Teal Dotted Path Guideline
         ctx.lineWidth = 3;
         ctx.setLineDash([8, 8]);
         ctx.beginPath();
@@ -273,7 +269,7 @@ export function useRobotSim() {
 
         startPosRef.current = { x: 150, y: 150, heading: 0 };
         targetPosRef.current = { x: 200, y: 200, radius: 26, active: true };
-        setSensorsEnabled(false); // Disable sensors by default for manual navigation challenge
+        setSensorsEnabled(false);
         break;
 
       default:
@@ -283,7 +279,6 @@ export function useRobotSim() {
 
     setDestinationReached(false);
     setSelectedTrack(trackId);
-    // Reset robot to start position of track
     const sp = startPosRef.current;
     setRobot(prev => ({
       ...prev,
@@ -402,9 +397,9 @@ export function useRobotSim() {
     ctx.lineJoin = 'round';
 
     if (activeTool === 'draw') {
-      ctx.strokeStyle = '#000000';
+      ctx.strokeStyle = '#6C1A1A'; // Deep Maroon Line
     } else if (activeTool === 'eraser') {
-      ctx.strokeStyle = '#FFFFFF';
+      ctx.strokeStyle = '#FFFDF5'; // Cream Eraser
     }
 
     ctx.beginPath();
@@ -445,25 +440,25 @@ export function useRobotSim() {
       ctx.save();
       ctx.translate(tx, ty);
 
-      // Target ring
+      // Target ring (Teal Accent)
       ctx.beginPath();
       ctx.arc(0, 0, tr, 0, Math.PI * 2);
-      ctx.fillStyle = destinationReached ? 'rgba(16, 185, 129, 0.25)' : 'rgba(56, 189, 248, 0.2)';
+      ctx.fillStyle = destinationReached ? 'rgba(49, 170, 169, 0.3)' : 'rgba(49, 170, 169, 0.2)';
       ctx.fill();
-      ctx.strokeStyle = destinationReached ? '#10B981' : '#38BDF8';
+      ctx.strokeStyle = '#31AAA9';
       ctx.lineWidth = 2.5;
       ctx.setLineDash([4, 4]);
       ctx.stroke();
 
-      // Checkered center / Bullseye
+      // Bullseye (Crimson Accent)
       ctx.beginPath();
       ctx.arc(0, 0, 8, 0, Math.PI * 2);
-      ctx.fillStyle = destinationReached ? '#10B981' : '#F59E0B';
+      ctx.fillStyle = destinationReached ? '#31AAA9' : '#A82020';
       ctx.fill();
 
       // Label text
       ctx.font = 'bold 10px Inter, sans-serif';
-      ctx.fillStyle = destinationReached ? '#34D399' : '#38BDF8';
+      ctx.fillStyle = '#31AAA9';
       ctx.textAlign = 'center';
       ctx.fillText(destinationReached ? '🎯 GOAL!' : '🎯 DESTINATION', 0, tr + 14);
 
@@ -478,8 +473,8 @@ export function useRobotSim() {
     const isAtStart = Math.abs(x - startPosRef.current.x) < 2 && Math.abs(y - startPosRef.current.y) < 2;
     if (isAtStart) {
       ctx.save();
-      ctx.rotate(-rad); // Keep flag upright
-      ctx.strokeStyle = '#3B82F6';
+      ctx.rotate(-rad);
+      ctx.strokeStyle = '#31AAA9';
       ctx.lineWidth = 2;
       ctx.setLineDash([4, 4]);
       ctx.beginPath();
@@ -493,32 +488,30 @@ export function useRobotSim() {
     ctx.shadowBlur = 10;
     ctx.shadowOffsetY = 4;
 
-    // 3. Main Chassis Body (Sleek Rounded Hex/Rectangle)
-    ctx.fillStyle = '#1E293B'; // Dark slate chassis
-    ctx.strokeStyle = '#38BDF8'; // Cyan border glow
+    // 3. Main Chassis Body (Deep Maroon body + Teal border)
+    ctx.fillStyle = '#6C1A1A';
+    ctx.strokeStyle = '#31AAA9';
     ctx.lineWidth = 2.5;
 
     ctx.beginPath();
-    const bw = 36; // Bot width
-    const bh = 28; // Bot height
+    const bw = 36;
+    const bh = 28;
     ctx.roundRect(-bw/2, -bh/2, bw, bh, 8);
     ctx.fill();
-    ctx.shadowColor = 'transparent'; // Reset shadow for details
+    ctx.shadowColor = 'transparent';
     ctx.stroke();
 
     // 4. Side Wheels
-    ctx.fillStyle = '#0F172A';
-    ctx.strokeStyle = '#64748B';
+    ctx.fillStyle = '#350B0B';
+    ctx.strokeStyle = '#A82020';
     ctx.lineWidth = 1.5;
-    // Top wheel
     ctx.fillRect(-8, -bh/2 - 4, 16, 5);
     ctx.strokeRect(-8, -bh/2 - 4, 16, 5);
-    // Bottom wheel
     ctx.fillRect(-8, bh/2 - 1, 16, 5);
     ctx.strokeRect(-8, bh/2 - 1, 16, 5);
 
     // 5. Direction Arrow & Center Hub
-    ctx.fillStyle = '#38BDF8';
+    ctx.fillStyle = '#F8E0A4';
     ctx.beginPath();
     ctx.moveTo(12, 0);
     ctx.lineTo(2, -6);
@@ -527,50 +520,46 @@ export function useRobotSim() {
     ctx.fill();
 
     // Center LED Status
-    ctx.fillStyle = isRunning ? '#10B981' : '#F59E0B';
+    ctx.fillStyle = isRunning ? '#31AAA9' : '#A82020';
     ctx.beginPath();
     ctx.arc(-6, 0, 3, 0, Math.PI * 2);
     ctx.fill();
 
-    // 6. Sensor Support Arms (Front Probes Bracket)
-    ctx.strokeStyle = sensorsEnabled ? '#475569' : '#334155';
+    // 6. Sensor Support Arms
+    ctx.strokeStyle = sensorsEnabled ? '#F8E0A4' : '#6C1A1A';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    // Arm to Left Probe
     ctx.moveTo(bw/2, -6);
     ctx.lineTo(24, -10);
-    // Arm to Right Probe
     ctx.moveTo(bw/2, 6);
     ctx.lineTo(24, 10);
     ctx.stroke();
 
-    ctx.restore(); // Restore unrotated context for absolute probe rendering
+    ctx.restore();
 
-    // 7. Render Sensor Probe LEDs in Absolute Canvas Coordinates
-    const drawProbeLED = (pos, isOn, label) => {
+    // 7. Render Sensor Probe LEDs (Teal ON / Crimson OFF)
+    const drawProbeLED = (pos, isOn) => {
       ctx.save();
       ctx.translate(pos.x, pos.y);
 
       if (!sensorsEnabled) {
-        // Disabled Muted Sensors
         ctx.beginPath();
         ctx.arc(0, 0, 4, 0, Math.PI * 2);
-        ctx.fillStyle = '#475569';
-        ctx.strokeStyle = '#64748B';
+        ctx.fillStyle = '#6C1A1A';
+        ctx.strokeStyle = '#A82020';
         ctx.lineWidth = 1;
         ctx.fill();
         ctx.stroke();
       } else {
-        // Active IR Sensors
         ctx.beginPath();
         ctx.arc(0, 0, 7, 0, Math.PI * 2);
-        ctx.fillStyle = isOn ? 'rgba(16, 185, 129, 0.35)' : 'rgba(239, 68, 68, 0.2)';
+        ctx.fillStyle = isOn ? 'rgba(49, 170, 169, 0.35)' : 'rgba(168, 32, 32, 0.25)';
         ctx.fill();
 
         ctx.beginPath();
         ctx.arc(0, 0, 4.5, 0, Math.PI * 2);
-        ctx.fillStyle = isOn ? '#10B981' : '#EF4444';
-        ctx.strokeStyle = '#FFFFFF';
+        ctx.fillStyle = isOn ? '#31AAA9' : '#A82020';
+        ctx.strokeStyle = '#FFFDF5';
         ctx.lineWidth = 1;
         ctx.fill();
         ctx.stroke();
@@ -579,8 +568,8 @@ export function useRobotSim() {
       ctx.restore();
     };
 
-    drawProbeLED(leftSensorPos, leftSensorOn, 'L');
-    drawProbeLED(rightSensorPos, rightSensorOn, 'R');
+    drawProbeLED(leftSensorPos, leftSensorOn);
+    drawProbeLED(rightSensorPos, rightSensorOn);
 
   }, [robot, isRunning, sensorsEnabled, destinationReached]);
 

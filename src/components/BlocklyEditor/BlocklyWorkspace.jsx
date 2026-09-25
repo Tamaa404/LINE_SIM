@@ -3,7 +3,7 @@ import * as Blockly from 'blockly';
 import { javascriptGenerator } from 'blockly/javascript';
 import { initCustomBlockly, TOOLBOX_XML, DEFAULT_WORKSPACE_XML } from '../../utils/blocklyConfig';
 
-export function BlocklyWorkspace({ onCodeChange, setWorkspaceRef }) {
+export function BlocklyWorkspace({ onCodeChange, setWorkspaceRef, theme = 'light' }) {
   const blocklyDivRef = useRef(null);
   const workspaceRef = useRef(null);
 
@@ -13,13 +13,15 @@ export function BlocklyWorkspace({ onCodeChange, setWorkspaceRef }) {
     // Register custom blocks and JS generators
     initCustomBlockly(Blockly);
 
+    const initialGridColour = theme === 'dark' ? '#334155' : '#E6CA85';
+
     // Inject Blockly workspace with Scratch aesthetic options
     const workspace = Blockly.inject(blocklyDivRef.current, {
       toolbox: TOOLBOX_XML,
       grid: {
         spacing: 25,
         length: 3,
-        colour: '#334155',
+        colour: initialGridColour,
         snap: true,
       },
       zoom: {
@@ -90,8 +92,21 @@ export function BlocklyWorkspace({ onCodeChange, setWorkspaceRef }) {
     };
   }, []);
 
+  // Update grid color dynamically on theme toggle
+  useEffect(() => {
+    if (workspaceRef.current && workspaceRef.current.options && workspaceRef.current.options.gridOptions) {
+      const gridColour = theme === 'dark' ? '#334155' : '#E6CA85';
+      workspaceRef.current.options.gridOptions.colour = gridColour;
+      if (workspaceRef.current.grid_) {
+        workspaceRef.current.grid_.update(workspaceRef.current.scale);
+      }
+    }
+  }, [theme]);
+
   return (
-    <div className="relative w-full h-full bg-slate-950 overflow-hidden">
+    <div className={`relative w-full h-full overflow-hidden transition-colors duration-300 ${
+      theme === 'dark' ? 'bg-slate-950' : 'bg-palette-cream-paper'
+    }`}>
       <div ref={blocklyDivRef} className="absolute inset-0 w-full h-full" />
     </div>
   );
