@@ -118,7 +118,7 @@ export default function App() {
         {/* LEFT PANEL: HTML5 Canvas Robot Arena */}
         <section
           className={`h-full relative overflow-hidden border-r border-slate-800 ${
-            mobileTab === 'arena' ? 'flex flex-col flex-1' : 'hidden lg:flex lg:flex-col'
+            mobileTab === 'arena' ? 'flex flex-col flex-1 pb-16 lg:pb-0' : 'hidden lg:flex lg:flex-col'
           }`}
         >
           <CanvasArena
@@ -143,7 +143,7 @@ export default function App() {
         {/* RIGHT PANEL: Blockly Workspace & Simulation Controls */}
         <section
           className={`h-full flex flex-col relative overflow-hidden bg-slate-900 ${
-            mobileTab === 'code' ? 'flex flex-col flex-1' : 'hidden lg:flex lg:flex-col'
+            mobileTab === 'code' ? 'flex flex-col flex-1 pb-16 lg:pb-0' : 'hidden lg:flex lg:flex-col'
           }`}
         >
           <TopControlBar
