@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Line Follower Robot Simulator - Standalone App</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/blockly/blockly.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { background-color: #090d16; color: #f8fafc; font-family: 'Inter', sans-serif; overflow: hidden; user-select: none; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+    ::-webkit-scrollbar-thumb { background: rgba(51, 65, 85, 0.8); border-radius: 3px; }
+    .blocklySvg { background-color: #0f172a !important; }
+    .blocklyMainBackground { fill: #0f172a !important; stroke: none !important; }
+    .blocklyToolboxDiv { background-color: #1e293b !important; border-right: 1px solid rgba(255, 255, 255, 0.1) !important; }
+    .blocklyTreeLabel { font-family: 'Inter', sans-serif !important; font-size: 13px !important; color: #e2e8f0 !important; }
+    .blocklyFlyoutBackground { fill: #1e293b !important; fill-opacity: 0.95 !important; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useCallback } = React;
+
+    // Preset Tracks
+    const PRESET_TRACKS = [
+      { id: 'oval', name: '🔄 Simple Oval Track' },
+      { id: 'figure8', name: '♾️ Figure-8 Loop' },
+      { id: 'sharp_turns', name: '⚡ Sharp 90° Corner Track' },
+      { id: 'scurve', name: '〰️ S-Curve & Slalom' }
+    ];
+
+    // Blockly Toolbox XML
+    const TOOLBOX_XML = `
+    <xml id="toolbox" style="display: none">
+      <category name="Motion" colour="#3B82F6">
+        <block type="robot_move_forward"><field name="STEPS">5</field></block>
+        <block type="robot_turn_left"><field name="DEGREE">10</field></block>
+        <block type="robot_turn_right"><field name="DEGREE">10</field></block>
+        <block type="robot_set_speed"><field name="SPEED">5</field></block>
+      </category>
+      <category name="Sensors" colour="#14B8A6">
+        <block type="robot_sensor_detect"><field name="SENSOR">LEFT</field></block>
+        <block type="robot_both_sensors"></block>
+        <block type="robot_no_sensors"></block>
+      </category>
+      <category name="Control" colour="#F59E0B">
+        <block type="robot_repeat_forever"></block>
+        <block type="controls_if"></block>
+        <block type="controls_if"><mutation else="1"></mutation></block>
+        <block type="robot_wait"><field name="TIME">50</field></block>
+      </category>
+      <category name="Logic" colour="#8B5CF6">
+        <block type="logic_compare"></block>
+        <block type="logic_operation"></block>
+        <block type="logic_negate"></block>
+        <block type="logic_boolean"></block>
+      </category>
+    </xml>`;
+
+    const DEFAULT_WORKSPACE_XML = `
+    <xml xmlns="https://developers.google.com/blockly/xml">
+      <block type="robot_repeat_forever" x="30" y="30">
+        <statement name="DO">
+          <block type="controls_if">
+            <mutation elseif="2" else="1"></mutation>
+            <value name="IF0"><block type="robot_both_sensors"></block></value>
+            <statement name="DO0"><block type="robot_move_forward"><field name="STEPS">5</field></block></statement>
+            <value name="IF1"><block type="robot_sensor_detect"><field name="SENSOR">LEFT</field></block></value>
+            <statement name="DO1"><block type="robot_turn_left"><field name="DEGREE">12</field></block></statement>
+            <value name="IF2"><block type="robot_sensor_detect"><field name="SENSOR">RIGHT</field></block></value>
+            <statement name="DO2"><block type="robot_turn_right"><field name="DEGREE">12</field></block></statement>
+            <statement name="ELSE"><block type="robot_move_forward"><field name="STEPS">3</field></block></statement>
+          </block>
+        </statement>
+      </block>
+    </xml>`;
+
+    function initCustomBlocks() {
+      if (Blockly.Blocks['robot_move_forward']) return;
+
+      Blockly.Blocks['robot_move_forward'] = {
+        init: function() {
+          this.appendDummyInput().appendField("🤖 move forward").appendField(new Blockly.FieldNumber(5, 1, 100), "STEPS").appendField("px");
+          this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(220);
+        }
+      };
+      Blockly.Blocks['robot_turn_left'] = {
+        init: function() {
+          this.appendDummyInput().appendField("↶ turn left").appendField(new Blockly.FieldNumber(10, 1, 360), "DEGREE").appendField("deg");
+          this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(220);
+        }
+      };
+      Blockly.Blocks['robot_turn_right'] = {
+        init: function() {
+          this.appendDummyInput().appendField("↷ turn right").appendField(new Blockly.FieldNumber(10, 1, 360), "DEGREE").appendField("deg");
+          this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(220);
+        }
+      };
+      Blockly.Blocks['robot_set_speed'] = {
+        init: function() {
+          this.appendDummyInput().appendField("⚡ set robot speed").appendField(new Blockly.FieldNumber(5, 1, 20), "SPEED").appendField("px");
+          this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(220);
+        }
+      };
+      Blockly.Blocks['robot_sensor_detect'] = {
+        init: function() {
+          this.appendDummyInput().appendField("📡 sensor ").appendField(new Blockly.FieldDropdown([["left", "LEFT"], ["right", "RIGHT"]]), "SENSOR").appendField(" on black line?");
+          this.setOutput(true, "Boolean"); this.setColour(160);
+        }
+      };
+      Blockly.Blocks['robot_both_sensors'] = {
+        init: function() {
+          this.appendDummyInput().appendField("📡 both sensors on line?");
+          this.setOutput(true, "Boolean"); this.setColour(160);
+        }
+      };
+      Blockly.Blocks['robot_no_sensors'] = {
+        init: function() {
+          this.appendDummyInput().appendField("📡 off line (neither sensor)?");
+          this.setOutput(true, "Boolean"); this.setColour(160);
+        }
+      };
+      Blockly.Blocks['robot_repeat_forever'] = {
+        init: function() {
+          this.appendDummyInput().appendField("🔄 repeat forever");
+          this.appendStatementInput("DO").appendField("do");
+          this.setPreviousStatement(true, null); this.setColour(40);
+        }
+      };
+      Blockly.Blocks['robot_wait'] = {
+        init: function() {
+          this.appendDummyInput().appendField("⏳ wait ").appendField(new Blockly.FieldNumber(50, 10, 5000), "TIME").appendField("ms");
+          this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(40);
+        }
+      };
+
+      const generator = Blockly.JavaScript;
+      generator.forBlock['robot_move_forward'] = (block) => `await robot.moveForward(${block.getFieldValue('STEPS')});\n`;
+      generator.forBlock['robot_turn_left'] = (block) => `await robot.turnLeft(${block.getFieldValue('DEGREE')});\n`;
+      generator.forBlock['robot_turn_right'] = (block) => `await robot.turnRight(${block.getFieldValue('DEGREE')});\n`;
+      generator.forBlock['robot_set_speed'] = (block) => `robot.setSpeed(${block.getFieldValue('SPEED')});\n`;
+      generator.forBlock['robot_sensor_detect'] = (block) => [`robot.isSensorOnLine('${block.getFieldValue('SENSOR').toLowerCase()}')`, generator.ORDER_ATOMIC];
+      generator.forBlock['robot_both_sensors'] = () => [`(robot.isSensorOnLine('left') && robot.isSensorOnLine('right'))`, generator.ORDER_ATOMIC];
+      generator.forBlock['robot_no_sensors'] = () => [`(!robot.isSensorOnLine('left') && !robot.isSensorOnLine('right'))`, generator.ORDER_ATOMIC];
+      generator.forBlock['robot_repeat_forever'] = (block) => `while (robot.shouldContinue()) {\n${generator.statementToCode(block, 'DO')}  await robot.sleep(15);\n}\n`;
+      generator.forBlock['robot_wait'] = (block) => `await robot.sleep(${block.getFieldValue('TIME')});\n`;
+    }
+
+    function App() {
+      const trackCanvasRef = useRef(null);
+      const robotCanvasRef = useRef(null);
+      const workspaceRef = useRef(null);
+      const abortControllerRef = useRef(null);
+
+      const [robot, setRobot] = useState({
+        x: 350, y: 250, heading: 0, speed: 5,
+        leftSensorOn: false, rightSensorOn: false,
+        leftSensorPos: { x: 0, y: 0 }, rightSensorPos: { x: 0, y: 0 }
+      });
+
+      const startPosRef = useRef({ x: 350, y: 250, heading: 0 });
+      const [activeTool, setActiveTool] = useState('draw');
+      const [brushSize, setBrushSize] = useState(24);
+      const [isDrawing, setIsDrawing] = useState(false);
+      const lastDrawPos = useRef(null);
+
+      const [isRunning, setIsRunning] = useState(false);
+      const [simSpeed, setSimSpeed] = useState(1);
+      const [selectedTrack, setSelectedTrack] = useState('oval');
+      const [generatedCode, setGeneratedCode] = useState('');
+      const [showCode, setShowCode] = useState(false);
+
+      // Check Sensor
+      const checkSensorAt = useCallback((px, py) => {
+        const canvas = trackCanvasRef.current;
+        if (!canvas) return false;
+        const ctx = canvas.getContext('2d');
+        if (px < 0 || px >= canvas.width || py < 0 || py >= canvas.height) return false;
+
+        try {
+          const imgData = ctx.getImageData(Math.floor(px), Math.floor(py), 1, 1).data;
+          const brightness = (imgData[0] + imgData[1] + imgData[2]) / 3;
+          return brightness < 120;
+        } catch(e) { return false; }
+      }, []);
+
+      const updateSensors = useCallback((x, y, heading) => {
+        const rad = (heading * Math.PI) / 180;
+        const fwd = 24, lat = 13;
+        const lx = x + fwd * Math.cos(rad) - lat * Math.sin(rad);
+        const ly = y + fwd * Math.sin(rad) + lat * Math.cos(rad);
+        const rx = x + fwd * Math.cos(rad) + lat * Math.sin(rad);
+        const ry = y + fwd * Math.sin(rad) - lat * Math.cos(rad);
+
+        const leftOn = checkSensorAt(lx, ly);
+        const rightOn = checkSensorAt(rx, ry);
+
+        setRobot(prev => ({
+          ...prev, x, y, heading,
+          leftSensorOn: leftOn, rightSensorOn: rightOn,
+          leftSensorPos: { x: lx, y: ly }, rightSensorPos: { x: rx, y: ry }
+        }));
+      }, [checkSensorAt]);
+
+      const clearTrack = useCallback(() => {
+        const canvas = trackCanvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = '#E2E8F0'; ctx.lineWidth = 1;
+        for (let x = 0; x < canvas.width; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke(); }
+        for (let y = 0; y < canvas.height; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke(); }
+      }, []);
+
+      const loadPresetTrack = useCallback((trackId) => {
+        const canvas = trackCanvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        clearTrack();
+
+        ctx.strokeStyle = '#000000'; ctx.lineWidth = 26; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        const w = canvas.width, h = canvas.height, cx = w/2, cy = h/2;
+
+        if (trackId === 'oval') {
+          ctx.beginPath(); ctx.ellipse(cx, cy, 260, 160, 0, 0, Math.PI * 2); ctx.stroke();
+          startPosRef.current = { x: cx, y: cy - 160, heading: 0 };
+        } else if (trackId === 'figure8') {
+          ctx.beginPath(); ctx.arc(cx - 120, cy, 120, 0, Math.PI * 2); ctx.stroke();
+          ctx.beginPath(); ctx.arc(cx + 120, cy, 120, 0, Math.PI * 2); ctx.stroke();
+          startPosRef.current = { x: cx - 120, y: cy - 120, heading: 0 };
+        } else if (trackId === 'sharp_turns') {
+          ctx.beginPath(); ctx.moveTo(100, 100); ctx.lineTo(w - 100, 100); ctx.lineTo(w - 100, h - 100); ctx.lineTo(100, h - 100); ctx.closePath(); ctx.stroke();
+          startPosRef.current = { x: 150, y: 100, heading: 0 };
+        } else if (trackId === 'scurve') {
+          ctx.beginPath(); ctx.moveTo(80, cy); ctx.bezierCurveTo(w*0.3, cy-220, w*0.4, cy+220, w*0.7, cy-100); ctx.stroke();
+          startPosRef.current = { x: 80, y: cy, heading: 0 };
+        }
+
+        setSelectedTrack(trackId);
+        const sp = startPosRef.current;
+        setRobot(prev => ({ ...prev, x: sp.x, y: sp.y, heading: sp.heading }));
+        setTimeout(() => updateSensors(sp.x, sp.y, sp.heading), 50);
+      }, [clearTrack, updateSensors]);
+
+      useEffect(() => { loadPresetTrack('oval'); }, []);
+
+      // Draw Robot Canvas
+      useEffect(() => {
+        const canvas = robotCanvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const { x, y, heading, leftSensorOn, rightSensorOn, leftSensorPos, rightSensorPos } = robot;
+        const rad = (heading * Math.PI) / 180;
+
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(rad);
+
+        // Body
+        ctx.fillStyle = '#1E293B'; ctx.strokeStyle = '#38BDF8'; ctx.lineWidth = 2.5;
+        ctx.beginPath(); ctx.roundRect(-18, -14, 36, 28, 6); ctx.fill(); ctx.stroke();
+
+        // Arrow
+        ctx.fillStyle = '#38BDF8';
+        ctx.beginPath(); ctx.moveTo(12, 0); ctx.lineTo(2, -6); ctx.lineTo(2, 6); ctx.fill();
+
+        ctx.restore();
+
+        // Sensor Probes
+        const drawProbe = (pos, isOn) => {
+          ctx.beginPath(); ctx.arc(pos.x, pos.y, 5, 0, Math.PI * 2);
+          ctx.fillStyle = isOn ? '#10B981' : '#EF4444'; ctx.fill();
+          ctx.strokeStyle = '#FFFFFF'; ctx.lineWidth = 1; ctx.stroke();
+        };
+        drawProbe(leftSensorPos, leftSensorOn);
+        drawProbe(rightSensorPos, rightSensorOn);
+      }, [robot]);
+
+      // Mount Blockly
+      useEffect(() => {
+        initCustomBlocks();
+        const workspace = Blockly.inject('blockly-div', {
+          toolbox: TOOLBOX_XML,
+          grid: { spacing: 25, length: 3, colour: '#334155', snap: true },
+          zoom: { controls: true, wheel: true, startScale: 0.9 }
+        });
+        workspaceRef.current = workspace;
+
+        const dom = Blockly.utils.xml.textToDom(DEFAULT_WORKSPACE_XML);
+        Blockly.Xml.domToWorkspace(dom, workspace);
+
+        workspace.addChangeListener(() => {
+          try {
+            const code = Blockly.JavaScript.workspaceToCode(workspace);
+            setGeneratedCode(code);
+          } catch(e) {}
+        });
+      }, []);
+
+      const handleMouseDown = (e) => {
+        const rect = trackCanvasRef.current.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        if (activeTool === 'reposition') {
+          startPosRef.current = { x, y, heading: robot.heading };
+          setRobot(prev => ({ ...prev, x, y }));
+          updateSensors(x, y, robot.heading);
+          return;
+        }
+
+        setIsDrawing(true);
+        lastDrawPos.current = { x, y };
+      };
+
+      const handleMouseMove = (e) => {
+        if (!isDrawing) return;
+        const rect = trackCanvasRef.current.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        const ctx = trackCanvasRef.current.getContext('2d');
+        ctx.lineWidth = brushSize; ctx.lineCap = 'round';
+        ctx.strokeStyle = activeTool === 'draw' ? '#000000' : '#FFFFFF';
+        ctx.beginPath();
+        if (lastDrawPos.current) ctx.moveTo(lastDrawPos.current.x, lastDrawPos.current.y);
+        else ctx.moveTo(x, y);
+        ctx.lineTo(x, y); ctx.stroke();
+        lastDrawPos.current = { x, y };
+        updateSensors(robot.x, robot.y, robot.heading);
+      };
+
+      const handleMouseUp = () => { setIsDrawing(false); lastDrawPos.current = null; };
+
+      const stopSim = () => {
+        if (abortControllerRef.current) abortControllerRef.current.abort();
+        setIsRunning(false);
+      };
+
+      const runSim = async () => {
+        if (isRunning) return;
+        setIsRunning(true);
+
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
+
+        const robotAPI = {
+          shouldContinue: () => !controller.signal.aborted,
+          sleep: (ms) => new Promise((resolve, reject) => {
+            if (controller.signal.aborted) return reject(new Error('STOPPED'));
+            const timer = setTimeout(resolve, Math.max(5, ms / simSpeed));
+            controller.signal.addEventListener('abort', () => { clearTimeout(timer); reject(new Error('STOPPED')); });
+          }),
+          setSpeed: (sp) => setRobot(prev => ({ ...prev, speed: sp })),
+          moveForward: async (steps) => {
+            if (controller.signal.aborted) throw new Error('STOPPED');
+            setRobot(prev => {
+              const rad = (prev.heading * Math.PI) / 180;
+              const nx = Math.max(20, Math.min(680, prev.x + Math.cos(rad) * steps));
+              const ny = Math.max(20, Math.min(480, prev.y + Math.sin(rad) * steps));
+              updateSensors(nx, ny, prev.heading);
+              return { ...prev, x: nx, y: ny };
+            });
+            await new Promise(r => setTimeout(r, Math.max(4, 15 / simSpeed)));
+          },
+          turnLeft: async (deg) => {
+            if (controller.signal.aborted) throw new Error('STOPPED');
+            setRobot(prev => {
+              const nh = (prev.heading - deg + 360) % 360;
+              updateSensors(prev.x, prev.y, nh);
+              return { ...prev, heading: nh };
+            });
+            await new Promise(r => setTimeout(r, Math.max(4, 15 / simSpeed)));
+          },
+          turnRight: async (deg) => {
+            if (controller.signal.aborted) throw new Error('STOPPED');
+            setRobot(prev => {
+              const nh = (prev.heading + deg) % 360;
+              updateSensors(prev.x, prev.y, nh);
+              return { ...prev, heading: nh };
+            });
+            await new Promise(r => setTimeout(r, Math.max(4, 15 / simSpeed)));
+          },
+          isSensorOnLine: (type) => {
+            const rad = (robot.heading * Math.PI) / 180;
+            const fwd = 24, lat = 13;
+            const px = type === 'left' ? robot.x + fwd * Math.cos(rad) - lat * Math.sin(rad) : robot.x + fwd * Math.cos(rad) + lat * Math.sin(rad);
+            const py = type === 'left' ? robot.y + fwd * Math.sin(rad) + lat * Math.cos(rad) : robot.y + fwd * Math.sin(rad) - lat * Math.cos(rad);
+            return checkSensorAt(px, py);
+          }
+        };
+
+        try {
+          const code = Blockly.JavaScript.workspaceToCode(workspaceRef.current);
+          const fn = new Function('robot', `return (async () => { try { ${code} } catch(e){} })();`);
+          await fn(robotAPI);
+        } catch(e) {} finally { setIsRunning(false); }
+      };
+
+      return (
+        <div className="flex flex-col h-screen w-screen bg-slate-950">
+          {/* Header */}
+          <header className="h-14 bg-slate-900 border-b border-slate-800 px-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">🤖</span>
+              <h1 className="text-base font-bold text-cyan-400">RoboTrack Line Follower Simulator</h1>
+            </div>
+            <div className="flex items-center gap-3">
+              <select value={selectedTrack} onChange={(e) => loadPresetTrack(e.target.value)} className="bg-slate-800 text-cyan-300 text-xs px-2 py-1 rounded border border-slate-700">
+                {PRESET_TRACKS.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+              </select>
+              <button onClick={() => { const sp = startPosRef.current; setRobot(prev => ({ ...prev, x: sp.x, y: sp.y, heading: sp.heading })); updateSensors(sp.x, sp.y, sp.heading); }} className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-xs text-amber-300 rounded border border-slate-700">Reset Position</button>
+              <button onClick={() => setShowCode(!showCode)} className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-xs text-cyan-300 rounded border border-slate-700">View Code</button>
+            </div>
+          </header>
+
+          {/* Main 50/50 Split */}
+          <main className="flex-1 grid grid-cols-1 lg:grid-cols-2 h-[calc(100vh-56px)]">
+            {/* Canvas Arena Panel */}
+            <div className="flex flex-col h-full bg-slate-950 border-r border-slate-800">
+              {/* Toolbox */}
+              <div className="p-2 bg-slate-900 border-b border-slate-800 flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <button onClick={() => setActiveTool('draw')} className={`px-2.5 py-1 rounded ${activeTool === 'draw' ? 'bg-cyan-600 text-white font-bold' : 'bg-slate-800 text-slate-300'}`}>Draw Track</button>
+                  <button onClick={() => setActiveTool('eraser')} className={`px-2.5 py-1 rounded ${activeTool === 'eraser' ? 'bg-amber-600 text-white font-bold' : 'bg-slate-800 text-slate-300'}`}>Eraser</button>
+                  <button onClick={() => setActiveTool('reposition')} className={`px-2.5 py-1 rounded ${activeTool === 'reposition' ? 'bg-purple-600 text-white font-bold' : 'bg-slate-800 text-slate-300'}`}>Reposition</button>
+                  <button onClick={clearTrack} className="px-2.5 py-1 bg-rose-950 text-rose-300 rounded border border-rose-800">Clear</button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span>Size: {brushSize}px</span>
+                  <input type="range" min="8" max="40" value={brushSize} onChange={(e) => setBrushSize(Number(e.target.value))} className="w-20 accent-cyan-500" />
+                </div>
+              </div>
+
+              {/* Dual Canvas */}
+              <div className="flex-1 relative flex items-center justify-center p-2">
+                <div className="relative rounded-lg overflow-hidden border border-slate-800 bg-white">
+                  <canvas ref={trackCanvasRef} width={700} height={500} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} className="block cursor-crosshair" />
+                  <canvas ref={robotCanvasRef} width={700} height={500} className="absolute top-0 left-0 pointer-events-none" />
+                </div>
+              </div>
+
+              {/* Telemetry Bar */}
+              <div className="h-12 bg-slate-900 border-t border-slate-800 px-4 flex items-center justify-between text-xs">
+                <div className="flex items-center gap-3">
+                  <span className={`px-2 py-0.5 rounded font-bold ${robot.leftSensorOn ? 'bg-emerald-950 text-emerald-300 border border-emerald-700' : 'bg-slate-800 text-slate-400'}`}>
+                    LEFT IR: {robot.leftSensorOn ? 'ON LINE' : 'OFF LINE'}
+                  </span>
+                  <span className={`px-2 py-0.5 rounded font-bold ${robot.rightSensorOn ? 'bg-emerald-950 text-emerald-300 border border-emerald-700' : 'bg-slate-800 text-slate-400'}`}>
+                    RIGHT IR: {robot.rightSensorOn ? 'ON LINE' : 'OFF LINE'}
+                  </span>
+                </div>
+                <div className="text-slate-300">Heading: <span className="font-mono text-cyan-300 font-bold">{Math.round(robot.heading)}°</span></div>
+                <div className="text-slate-300">Pos: <span className="font-mono text-slate-300">({Math.round(robot.x)}, {Math.round(robot.y)})</span></div>
+              </div>
+            </div>
+
+            {/* Blockly Panel */}
+            <div className="flex flex-col h-full bg-slate-900 relative">
+              <div className="h-12 bg-slate-900 border-b border-slate-800 px-4 flex items-center justify-between">
+                {!isRunning ? (
+                  <button onClick={runSim} className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded shadow-lg flex items-center gap-1.5">
+                    <span>▶ Run Simulation</span>
+                  </button>
+                ) : (
+                  <button onClick={stopSim} className="px-4 py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded shadow-lg flex items-center gap-1.5">
+                    <span>⏹ Stop Simulation</span>
+                  </button>
+                )}
+
+                <div className="flex items-center gap-2 text-xs">
+                  <span>Speed: {simSpeed}x</span>
+                  <input type="range" min="1" max="5" step="0.5" value={simSpeed} onChange={(e) => setSimSpeed(Number(e.target.value))} className="w-20 accent-cyan-400" />
+                </div>
+              </div>
+
+              <div id="blockly-div" className="flex-1 w-full h-full"></div>
+            </div>
+          </main>
+
+          {showCode && (
+            <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 max-w-xl w-full">
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="text-sm font-bold text-cyan-400">Generated JavaScript Code</h3>
+                  <button onClick={() => setShowCode(false)} className="text-slate-400 hover:text-white">✕</button>
+                </div>
+                <pre className="bg-slate-950 p-3 rounded font-mono text-xs text-cyan-300 max-h-96 overflow-y-auto">{generatedCode}</pre>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
